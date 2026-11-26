@@ -151,6 +151,29 @@ footer{border-radius:42px 42px 0 0;margin-top:1rem}
 .studio-credit{text-align:center;padding:1rem 0 .2rem;font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;opacity:.9}
 .studio-credit strong{color:var(--gold);letter-spacing:.06em;text-transform:none;font-size:.95rem}
 @media (prefers-reduced-motion:reduce){.leaf,.rot-badge svg,.marquee,.pill,.service-icon,.hero::before{animation:none!important}}
+/* ===== RESPONSIVE HEADER — 79 Web Span Studio standard =====
+   Mobile menu: opens cleanly with no lag, scrolls inside itself while the
+   page behind stays locked, and closing it (or picking a link) restores
+   page scrolling instantly. No horizontal overflow at any width. */
+body.menu-open,html.menu-open{overflow:hidden!important;overscroll-behavior:none}
+.navbar-harvest{max-width:100vw}
+.navbar-toggler{border:2px solid var(--forest);border-radius:12px;color:var(--forest)}
+.navbar-toggler:focus{box-shadow:0 0 0 .2rem rgba(47,125,74,.25)}
+@media (max-width:991.98px){
+  .navbar-harvest .navbar-collapse{
+    max-height:calc(100dvh - 78px);
+    overflow-y:auto;
+    overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+    scrollbar-width:thin;
+  }
+  .navbar-harvest .collapsing{transition:height .16s ease!important}
+  .navbar-harvest .navbar-nav{padding-bottom:.6rem}
+  .navbar-harvest .nav-link{width:100%}
+  .navbar-harvest .navbar-nav .btn{width:100%}
+}
+@media (prefers-reduced-motion:reduce){.navbar-harvest .collapsing{transition:none!important}}
 </style>
 </head>
 <body>
@@ -168,7 +191,7 @@ footer{border-radius:42px 42px 0 0;margin-top:1rem}
       <span class="logo-mark"><i class="bi bi-flower1"></i></span>
       <span class="brand">Harvest<span>Link</span><small>Labour Hire · Agriculture</small></span>
     </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-label="Menu" style="min-height:44px;min-width:44px"><span class="navbar-toggler-icon"></span></button>
+    <button class="navbar-toggler collapsed" type="button" id="menuToggle" aria-controls="mainNav" aria-expanded="false" aria-label="Menu" style="min-height:44px;min-width:44px"><span class="navbar-toggler-icon"></span></button>
     <div class="collapse navbar-collapse" id="mainNav">
       <ul class="navbar-nav ms-auto align-items-lg-center gap-1 mt-3 mt-lg-0">
         <li class="nav-item"><a class="nav-link active" href="#" data-nav="home">Home</a></li>
@@ -492,8 +515,14 @@ bindApply();
 /* Reveal on scroll — declared before router so showPage can use it */
 var revealObserver=null;
 function observeReveals(){if(revealObserver)revealObserver.disconnect();if(!('IntersectionObserver' in window)){document.querySelectorAll('.reveal').forEach(el=>el.classList.add('visible'));return;}revealObserver=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){en.target.classList.add('visible');revealObserver.unobserve(en.target);}});},{threshold:.08});document.querySelectorAll('.reveal:not(.visible)').forEach(function(el){revealObserver.observe(el);});setTimeout(function(){document.querySelectorAll('.reveal').forEach(function(el){var r=el.getBoundingClientRect();if(r.top<window.innerHeight)el.classList.add('visible');});},400);}
+/* Responsive header — studio standard: lock page scroll the moment the
+   mobile menu starts opening, unlock it the moment closing starts, and
+   close instantly (no animation wait) when a menu link is chosen. */
+function lockScroll(on){document.body.classList.toggle('menu-open',on);document.documentElement.classList.toggle('menu-open',on);}
+function closeMobileMenu(){lockScroll(false);const nav=document.getElementById('mainNav');if(nav&&(nav.classList.contains('show')||nav.classList.contains('collapsing'))){nav.classList.remove('show','collapsing');nav.classList.add('collapse');nav.style.removeProperty('height');}const tog=document.querySelector('.navbar-toggler');if(tog){tog.classList.add('collapsed');tog.setAttribute('aria-expanded','false');}}
+(function(){const nav=document.getElementById('mainNav');const tog=document.getElementById('menuToggle');if(!nav||!tog)return;tog.addEventListener('click',()=>{const open=nav.classList.toggle('show');tog.classList.toggle('collapsed',!open);tog.setAttribute('aria-expanded',open?'true':'false');lockScroll(open);});window.addEventListener('resize',()=>{if(window.innerWidth>=992)closeMobileMenu();});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMobileMenu();});})();
 /* Router — 5 pages, no popup on load */
-function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));const pg=document.getElementById('page-'+id);if(pg)pg.classList.add('active');document.querySelectorAll('.nav-link').forEach(a=>a.classList.toggle('active',a.dataset.nav===id));window.scrollTo({top:0,behavior:'instant'});try{const nav=document.getElementById('mainNav');if(nav&&nav.classList.contains('show')&&window.bootstrap)bootstrap.Collapse.getOrCreateInstance(nav).hide();}catch(e){}observeReveals();startCounters();}
+function showPage(id){closeMobileMenu();document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));const pg=document.getElementById('page-'+id);if(pg)pg.classList.add('active');document.querySelectorAll('.nav-link').forEach(a=>a.classList.toggle('active',a.dataset.nav===id));window.scrollTo({top:0,behavior:'instant'});observeReveals();startCounters();}
 document.querySelectorAll('[data-nav]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();showPage(a.dataset.nav);history.replaceState(null,'','#'+a.dataset.nav);}));
 const startHash=(location.hash||'#home').replace('#','');if(['home','about','employers','jobs','contact'].includes(startHash))showPage(startHash);
 /* Hero search -> Jobs page */
